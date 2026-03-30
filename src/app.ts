@@ -1,6 +1,7 @@
 import "./logger";
 import "./err";
 import "./env";
+import { dbReady } from "@/utils/db";
 import express, { Request, Response, NextFunction } from "express";
 import expressWs from "express-ws";
 import logger from "morgan";
@@ -15,6 +16,9 @@ const app = express();
 let server: ReturnType<typeof app.listen> | null = null;
 
 export default async function startServe(randomPort: Boolean = false) {
+  // 等待数据库初始化完成
+  await dbReady;
+  
   if (process.env.NODE_ENV == "dev") await buildRoute();
 
   expressWs(app);

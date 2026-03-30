@@ -1,5 +1,4 @@
 import { readFile, writeFile } from "fs/promises";
-import u from "@/utils";
 import fs from "fs";
 import path from "path";
 import knex from "knex";
@@ -40,10 +39,23 @@ const db = knex({
   useNullAsDefault: true,
 });
 
+// 数据库初始化完成的 Promise
+let dbInitResolve: () => void;
+export const dbReady = new Promise<void>((resolve) => {
+  dbInitResolve = resolve;
+});
+
 (async () => {
-  await initDB(db);
-  await fixDB(db);
-  if (process.env.NODE_ENV == "dev") initKnexType(db);
+  try {
+    await initDB(db);
+    await fixDB(db);
+    if (process.env.NODE_ENV == "dev") initKnexType(db);
+    console.log("[数据库初始化完成]");
+  } catch (err) {
+    console.error("[数据库初始化失败]:", err);
+  } finally {
+    dbInitResolve();
+  }
 })();
 
 const dbClient = Object.assign(<TName extends TableName>(table: TName) => db<RowType<TName>, RowType<TName>[]>(table), db);
